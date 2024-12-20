@@ -13,6 +13,7 @@ app/*/*/*/__pycache__/
 .env/
 .venv/
 venv/
+pyvenv.cfg
 
 # PyCharm
 .idea/
