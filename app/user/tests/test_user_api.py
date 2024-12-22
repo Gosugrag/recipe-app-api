@@ -109,6 +109,7 @@ class PublicUserTests(TestCase):
         res = self.client.get(ME_URL)
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
+
 class PrivateUserTests(TestCase):
     """Test the users API (private)"""
 
