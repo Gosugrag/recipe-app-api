@@ -7,6 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from core import models
 
+
 class UserAdmin(BaseUserAdmin):
     """Define admin model for User model."""
     ordering = ['id']
@@ -26,8 +27,17 @@ class UserAdmin(BaseUserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'name', 'password1', 'password2', 'is_active', 'is_staff', 'is_superuser')
+            'fields': (
+                'email',
+                'name',
+                'password1',
+                'password2',
+                'is_active',
+                'is_staff',
+                'is_superuser'
+            )
         }),
     )
+
 
 admin.site.register(models.User, UserAdmin)
