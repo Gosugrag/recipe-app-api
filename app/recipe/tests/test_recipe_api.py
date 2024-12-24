@@ -320,3 +320,47 @@ class PrivateRecipeApiTests(TestCase):
             exists = recipe.ingredients.filter(name=ingredient['name'],
                                         user=self.user).exists()
             self.assertTrue(exists)
+
+    def test_create_ingredient_on_update(self):
+        """Test creating a ingredient on a recipe during update."""
+        recipe = create_recipe(user=self.user)
+
+        payload = {'ingredients': [{'name': 'Lemon'}, {'name': 'Apple'}]}
+        url = detail_url(recipe.id)
+        res = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ingredients = Ingredient.objects.filter(user=self.user)
+        self.assertEqual(ingredients.count(), 2)
+        for ingredient in payload['ingredients']:
+            exists = ingredients.filter(name=ingredient['name'],)
+            self.assertTrue(exists)
+
+    def test_update_recipe_assign_ingredient(self):
+        """Test updating a recipe with an existing ingredient."""
+        ingredient_lemon = Ingredient.objects.create(user=self.user, name='Lemon')
+        recipe = create_recipe(user=self.user)
+        recipe.ingredients.add(ingredient_lemon)
+
+        ingredient_apple = Ingredient.objects.create(user=self.user, name='Apple')
+        payload = {'ingredients': [{'name': 'Apple'}]}
+        url = detail_url(recipe.id)
+        res = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(ingredient_apple, recipe.ingredients.all())
+        self.assertNotIn(ingredient_lemon, recipe.ingredients.all())
+
+    def test_clear_recipe_ingredients(self):
+        """Test clearing a recipe ingredients."""
+        ingredient = Ingredient.objects.create(user=self.user, name='Lemon')
+        recipe = create_recipe(user=self.user)
+        recipe.ingredients.add(ingredient)
+
+        payload = {'ingredients': []}
+        url = detail_url(recipe.id)
+        res = self.client.patch(url, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertNotIn(ingredient, recipe.ingredients.all())
+        self.assertEqual(recipe.ingredients.count(), 0)
