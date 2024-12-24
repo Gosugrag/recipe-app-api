@@ -125,7 +125,8 @@ class PrivateRecipeApiTests(TestCase):
     def test_partial_update(self):
         """Test partial updating a recipe."""
         original_link = "https://example.com/recipe.pdf"
-        recipe = create_recipe(user=self.user, title="Sample Title", link=original_link)
+        recipe = create_recipe(user=self.user, title="Sample Title",
+                               link=original_link)
 
         payload = {'title': 'New title'}
         url = detail_url(recipe.id)
@@ -159,8 +160,11 @@ class PrivateRecipeApiTests(TestCase):
         self.assertEqual(recipe.user, self.user)
 
     def test_update_user_returns_error(self):
-        """Test updating a recipe with an other user results in an error."""
-        new_user = create_user(email='otheruser@example.com', password='password123')
+        """
+        Test updating a recipe with an other user results in an error.
+        """
+        new_user = create_user(email='otheruser@example.com',
+                               password='password123')
         recipe = create_recipe(user=self.user)
 
         payload = {'user': new_user.id}
@@ -295,12 +299,13 @@ class PrivateRecipeApiTests(TestCase):
         self.assertEqual(recipe.ingredients.count(), 2)
         for ingredient in payload['ingredients']:
             exists = recipe.ingredients.filter(name=ingredient['name'],
-                                        user=self.user).exists()
+                                               user=self.user).exists()
             self.assertTrue(exists)
 
     def test_create_recipe_with_existing_ingredient(self):
         """Test creating a recipe with an existing ingredient."""
-        ingredient_carrot = Ingredient.objects.create(user=self.user, name='Carrot')
+        ingredient_carrot = Ingredient.objects.create(user=self.user,
+                                                      name='Carrot')
         payload = {
             'title': 'Pongal',
             'time_minutes': 30,
@@ -318,7 +323,7 @@ class PrivateRecipeApiTests(TestCase):
         self.assertIn(ingredient_carrot, recipe.ingredients.all())
         for ingredient in payload['ingredients']:
             exists = recipe.ingredients.filter(name=ingredient['name'],
-                                        user=self.user).exists()
+                                               user=self.user).exists()
             self.assertTrue(exists)
 
     def test_create_ingredient_on_update(self):
