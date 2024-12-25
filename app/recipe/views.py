@@ -1,14 +1,38 @@
 """
 Views for recipe API.
 """
-from rest_framework import viewsets, mixins
+from drf_spectacular.utils import (
+    extend_schema_view,
+    extend_schema,
+    OpenApiParameter,
+    OpenApiTypes,
+)
+from rest_framework import viewsets, mixins, status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from core.models import Recipe, Tag, Ingredient
 from recipe import serializers
 
 
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'tags',
+                OpenApiTypes.STR,
+                description="Coma separated list of tag names to filter on.",
+            ),
+            OpenApiParameter(
+                'ingredients',
+                OpenApiTypes.STR,
+                description="Coma separated list of ingredient names to filter on.",
+            )
+        ]
+    )
+)
 class RecipeViewSet(viewsets.ModelViewSet):
     """View for managing recipes API."""
     serializer_class = serializers.RecipeDetailSerializer
@@ -16,14 +40,33 @@ class RecipeViewSet(viewsets.ModelViewSet):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
+    # def _params_to_ints(self, qs):
+    #    """Convert a list of string to a list of integers."""
+    #     return [int(str_id) for str_id in qs.split(',')]
+
     def get_queryset(self):
         """Return recipes for authenticated user."""
-        return self.queryset.filter(user=self.request.user).order_by('-id')
+        tags = self.request.query_params.get('tags', None)
+        ingredients = self.request.query_params.get('ingredients', None)
+        queryset = self.queryset
+        if tags:
+            queryset = queryset.filter(tags__name__in=tags.split(','))
+        if ingredients:
+            queryset = queryset.filter(
+                ingredients__name__in=ingredients.split(',')
+            )
+
+        return queryset.filter(
+            user=self.request.user,
+        ).order_by('-id').distinct()
+
 
     def get_serializer_class(self):
         """Return serializer class for request."""
         if self.action == 'list':
             return serializers.RecipeSerializer
+        elif self.action == 'upload_image':
+            return serializers.RecipeImageSerializer
 
         return self.serializer_class
 
@@ -31,7 +74,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Create a new recipe."""
         serializer.save(user=self.request.user)
 
+    @action(methods=['POST'], detail=True, url_path='upload-image')
+    def upload_image(self, request, pk=None):
+        """Upload an image to recipe."""
+        recipe = self.get_object()
+        serializer = self.get_serializer(recipe, data=request.data)
 
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                'assigned_only',
+                OpenApiTypes.BOOL,
+                description='Filter recipes by items assigned or not',
+            )
+        ]
+    )
+)
 class BaseRecipeAttrViewSet(mixins.DestroyModelMixin,
                             mixins.ListModelMixin,
                             mixins.UpdateModelMixin,
@@ -42,7 +108,12 @@ class BaseRecipeAttrViewSet(mixins.DestroyModelMixin,
 
     def get_queryset(self):
         """Return tags/ingredients for authenticated user."""
-        return self.queryset.filter(user=self.request.user).order_by('-name')
+        assigned_only = bool(self.request.query_params.get('assigned_only', 0))
+        queryset = self.queryset
+        if assigned_only:
+            queryset = queryset.filter(recipes__isnull=False)
+
+        return queryset.filter(user=self.request.user).order_by('-name').distinct()
 
 
 class TagViewSet(BaseRecipeAttrViewSet):
