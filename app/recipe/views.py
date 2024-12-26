@@ -28,7 +28,8 @@ from recipe import serializers
             OpenApiParameter(
                 'ingredients',
                 OpenApiTypes.STR,
-                description="Coma separated list of ingredient names to filter on.",
+                description="Coma separated list of "
+                            "ingredient names to filter on.",
             )
         ]
     )
@@ -59,7 +60,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return queryset.filter(
             user=self.request.user,
         ).order_by('-id').distinct()
-
 
     def get_serializer_class(self):
         """Return serializer class for request."""
@@ -113,7 +113,9 @@ class BaseRecipeAttrViewSet(mixins.DestroyModelMixin,
         if assigned_only:
             queryset = queryset.filter(recipes__isnull=False)
 
-        return queryset.filter(user=self.request.user).order_by('-name').distinct()
+        return queryset.filter(
+            user=self.request.user
+        ).order_by('-name').distinct()
 
 
 class TagViewSet(BaseRecipeAttrViewSet):
