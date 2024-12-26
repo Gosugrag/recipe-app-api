@@ -14,6 +14,6 @@ class HealthCheckTestCase(TestCase):
     def test_healthcheck(self):
         """Test health check API"""
         client = APIClient()
-        url = reverse('core:healthcheck')
+        url = reverse('health-check')
         response = client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
