@@ -36,3 +36,5 @@ services:
 volumes:
   dev-db-data:
   dev-static-data:
+
+# with docker compose we can rebuild or up only specific apps.
